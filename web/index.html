@@ -70,13 +70,15 @@
     <section class="card sync" aria-labelledby="sync-title">
       <h2 id="sync-title">Keep documentation in sync with GitHub</h2>
       <p class="sub">Add a GitHub Actions workflow to a repository. Each push will create or update its documentation and architecture diagram, then commit the files back.</p>
-      <a class="download" href="/api/github-sync/package" download="ciao-github-sync.zip">Download GitHub sync setup</a>
+      <p><a class="download" href="https://raw.githubusercontent.com/176Anjali/CIAO---Code_In_Architecture_Out/main/github_sync/ciao-sync.yml" target="_blank" rel="noopener">Open/download workflow file (YAML)</a> <a class="download" href="https://raw.githubusercontent.com/176Anjali/CIAO---Code_In_Architecture_Out/main/github_sync/ciao_github_sync.py" target="_blank" rel="noopener">Open/download generator script (Python)</a></p>
       <ol>
-        <li>Extract the ZIP directly into your repository root, keeping the folders shown.</li>
-        <li>Commit and push those files. The workflow runs on that first push and on later pushes.</li>
+        <li>Save both files from the links above into your repository as <code>.github/workflows/ciao-sync.yml</code> and <code>github_sync/ciao_github_sync.py</code>.</li>
+        <li>Commit and push them. The workflow runs on that push and on later pushes.</li>
+        <li>In <strong>Settings → Actions → General</strong>, make sure Actions are enabled. Under <strong>Workflow permissions</strong>, allow read and write access so <code>contents: write</code> can commit the generated files. No personal access token is needed; GitHub supplies <code>GITHUB_TOKEN</code>.</li>
         <li>Open the repository’s Actions tab to follow progress. Generated files appear in <code>docs/</code>.</li>
       </ol>
-      <p>Ollama is the default. GitHub-hosted runners install Ollama and download <code>llama3.2:3b</code> when the workflow runs. For faster repeat runs, use a self-hosted runner with Ollama already installed. The setup guide also explains how to select OpenAI or another compatible API.</p>
+      <p><strong>Ollama (default):</strong> GitHub-hosted runners install Ollama and download <code>llama3.2:3b</code> each run. For a remote Ollama server, add the <code>CIAO_OLLAMA_HOST</code> Actions variable. For faster repeat runs, use a self-hosted runner with Ollama installed.</p>
+      <p><strong>OpenAI or compatible API:</strong> in <strong>Settings → Secrets and variables → Actions</strong>, add variables <code>CIAO_PROVIDER=openai-compatible</code>, <code>CIAO_MODEL</code>, and <code>CIAO_API_BASE_URL</code>; add <code>CIAO_API_KEY</code> under Secrets. Never put the API key in the workflow file.</p>
       <p><strong>Ollama note:</strong> an Ollama server running only on your laptop cannot be reached by GitHub-hosted runners. Use Ollama on the runner, a self-hosted runner, or a reachable Ollama API URL.</p>
     </section>
     <section class="card result" id="result" hidden>

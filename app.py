@@ -20,7 +20,7 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
@@ -125,26 +125,6 @@ def _select_available_model(names: set[str]) -> None:
 @app.get("/", include_in_schema=False)
 def home() -> FileResponse:
     return FileResponse(WEB_PAGE)
-
-
-@app.get("/api/github-sync/package", include_in_schema=False)
-def github_sync_package() -> Response:
-    """Download the GitHub Actions workflow and standalone report generator."""
-    package = io.BytesIO()
-    files = {
-        ".github/workflows/ciao-sync.yml": APP_DIR / "github_sync" / "ciao-sync.yml",
-        "github_sync/ciao_github_sync.py": APP_DIR / "github_sync" / "ciao_github_sync.py",
-        "github_sync/README.md": APP_DIR / "github_sync" / "README.md",
-        "github_sync/requirements.txt": APP_DIR / "github_sync" / "requirements.txt",
-    }
-    with zipfile.ZipFile(package, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for name, path in files.items():
-            archive.write(path, arcname=name)
-    return Response(
-        content=package.getvalue(),
-        media_type="application/zip",
-        headers={"Content-Disposition": 'attachment; filename="ciao-github-sync.zip"'},
-    )
 
 
 def _ollama_tags(timeout: float = 3) -> list[dict[str, Any]]:

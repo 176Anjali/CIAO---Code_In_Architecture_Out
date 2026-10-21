@@ -39,6 +39,36 @@ If Ollama is installed but the website still reports it offline, check that Olla
 
 ## GitHub Actions: keep a repository's docs in sync
 
-The website's **Download GitHub sync setup** button provides a workflow and standalone generator for another repository. Copy the ZIP contents into that repository, preserving `.github/workflows/ciao-sync.yml` and `github_sync/ciao_github_sync.py`, then commit and push. The workflow runs on that push and subsequent pushes, generates `docs/CIAO_DOCUMENTATION.md`, `docs/CIAO_DOCUMENTATION.pdf`, and `docs/CIAO_ARCHITECTURE.svg`, and commits changed files back. It can also be started manually from the Actions tab. See [github_sync/README.md](github_sync/README.md) for setup details.
+Use these direct files from this repository:
 
-The default workflow installs Ollama and `llama3.2:3b` on a GitHub-hosted runner each run. A self-hosted runner with Ollama already installed can keep the model warm and avoid repeated downloads. A remote Ollama API must be reachable by the runner; `localhost` on a developer's laptop is not reachable from GitHub-hosted runners. OpenAI and other OpenAI-compatible APIs are supported by setting repository Actions variables `CIAO_PROVIDER=openai-compatible`, `CIAO_MODEL`, and `CIAO_API_BASE_URL`, and storing `CIAO_API_KEY` as an Actions secret. The repository source is sent to the selected model API. The workflow needs `contents: write`; generated commits use GitHub's repository-scoped token and do not recursively trigger another run.
+- [GitHub Actions workflow (`ciao-sync.yml`)](https://raw.githubusercontent.com/176Anjali/CIAO---Code_In_Architecture_Out/main/github_sync/ciao-sync.yml)
+- [Standalone generator (`ciao_github_sync.py`)](https://raw.githubusercontent.com/176Anjali/CIAO---Code_In_Architecture_Out/main/github_sync/ciao_github_sync.py)
+
+### Install in the repository you want to keep synchronized
+
+1. Save the workflow file in the target repository at `.github/workflows/ciao-sync.yml` (create the folders if needed).
+2. Save the generator file at `github_sync/ciao_github_sync.py`.
+3. Commit and push both files. That first push triggers the workflow; future pushes regenerate the deliverables. You can also run it from that repository's **Actions** tab with **Run workflow**.
+4. The generated files are committed under `docs/`: `CIAO_DOCUMENTATION.md`, `CIAO_DOCUMENTATION.pdf`, and `CIAO_ARCHITECTURE.svg`.
+
+### GitHub repository settings
+
+- In **Settings → Actions → General**, make sure Actions are enabled and allowed for the repository.
+- Under **Workflow permissions**, allow read and write access for repository contents. The workflow requests only `contents: write` so it can commit the generated files. Organization policies may prevent repository owners from changing this setting; an organization administrator may need to enable it.
+- No personal access token is needed. The workflow uses the automatic, repository-scoped `GITHUB_TOKEN`.
+
+### Select the model API
+
+The default is Ollama with `llama3.2:3b`. On GitHub-hosted Ubuntu, the workflow installs Ollama and downloads the model each run; the first run can take several minutes. For faster repeated runs, install Ollama and the model on a self-hosted runner, then change `runs-on: ubuntu-latest` to `runs-on: self-hosted` in the workflow.
+
+For a remote Ollama server, add the repository Actions variable `CIAO_OLLAMA_HOST` with the API root (for example `https://ollama.example.com`, without `/api/chat`). A server bound only to your laptop's `localhost` cannot be reached by GitHub-hosted runners. If the remote endpoint requires bearer authentication, store its token in the Actions secret `CIAO_API_KEY`.
+
+For OpenAI or another OpenAI-compatible API, open **Settings → Secrets and variables → Actions** and add these repository variables:
+
+- `CIAO_PROVIDER` = `openai-compatible`
+- `CIAO_MODEL` = a model name supported by your provider
+- `CIAO_API_BASE_URL` = `https://api.openai.com/v1` for OpenAI, or the compatible API root for your provider
+
+Add `CIAO_API_KEY` as a **secret**, never as a variable or in the workflow file. API use may incur provider charges. Repository source excerpts are sent to the configured model API. To switch back to default Ollama, remove or change `CIAO_PROVIDER` and `CIAO_API_BASE_URL` and remove the API key if not needed.
+
+The workflow's generated commit does not start a duplicate run. See [GitHub's GITHUB_TOKEN documentation](https://docs.github.com/en/actions/concepts/security/github_token) for details.
