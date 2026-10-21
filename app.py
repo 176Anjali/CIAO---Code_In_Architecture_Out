@@ -540,9 +540,8 @@ def _architecture_svg(components: list[dict[str, str]], connections: list[dict[s
             sy += box_height / 2
             ty -= box_height / 2
         bend = (sx + tx) / 2
-        parts.append(f'<path d="M {sx:.0f} {sy:.0f} C {bend:.0f} {sy:.0f}, {bend:.0f} {ty:.0f}, {tx:.0f} {ty:.0f}" fill="none" stroke="#52745d" stroke-width="2.3" marker-end="url(#arrow)"/>')
-        if link["label"]:
-            parts.append(f'<text x="{bend:.0f}" y="{(sy + ty) / 2 - 7:.0f}" text-anchor="middle" fill="#52665c" font-family="Segoe UI,Arial,sans-serif" font-size="11">{escape(link["label"], quote=True)}</text>')
+        edge_label = escape(link["label"] or "Data flow", quote=True)
+        parts.append(f'<path d="M {sx:.0f} {sy:.0f} C {bend:.0f} {sy:.0f}, {bend:.0f} {ty:.0f}, {tx:.0f} {ty:.0f}" fill="none" stroke="#52745d" stroke-width="2.3" marker-end="url(#arrow)"><title>{edge_label}</title></path>')
     for item in components:
         x, y = positions[item["id"]]
         parts.append(f'<rect x="{x}" y="{y}" width="{box_width}" height="{box_height}" rx="13" fill="#ffffff" stroke="#b9c8bc" stroke-width="1.5"/>')
