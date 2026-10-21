@@ -12,10 +12,10 @@ Inputs:
 
 Outputs:
 
-- **Documentation PDF:** executive summary, system purpose, components, data flows, technologies, entry points, risks, and open questions
+- **Documentation PDF:** project overview and scope, features and user workflows, component responsibilities, runtime/data flow, technologies and entry points, setup/configuration, testing, and evidence-based limitations
 - **Architecture diagram:** separate SVG with component boxes and labeled connections
 
-Large repositories are sampled for speed and memory use: CIAO reads at most 100 files and 8,000 source characters, skipping common dependency, build, and version-control directories. A single file may be up to 128 KB, with up to 8,000 characters sent for analysis. The report and diagram are kept concise, and Ollama keeps the selected model warm for 10 minutes to speed up subsequent analyses.
+Large repositories are sampled for speed and memory use: the website reads at most 100 files and 8,000 source characters, while the GitHub sync generator sends up to 12,000 source characters. Both skip common dependency, build, and version-control directories. A single file may be up to 128 KB. CIAO asks the model to ground the report in source paths, symbols, dependencies, and commands; it retries a report that is too brief and flags a model that still cannot provide enough detail. Ollama keeps the selected model warm for 10 minutes to speed up subsequent analyses.
 
 ## Requirements
 

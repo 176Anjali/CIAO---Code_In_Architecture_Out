@@ -12,6 +12,8 @@ In the repository you want to synchronize, save them to these paths:
 
 Commit and push both files. The first push runs the workflow, and later pushes update `docs/CIAO_DOCUMENTATION.md`, `docs/CIAO_DOCUMENTATION.pdf`, and `docs/CIAO_ARCHITECTURE.svg`. You can also run it manually from the repository's Actions tab.
 
+The Markdown and PDF reports cover the project overview, purpose and scope, features and user workflows, architecture and component responsibilities, runtime/data flow, technologies and entry points, setup/configuration, testing, and source-supported limitations. The generator asks the model to cite concrete paths, symbols, commands, and dependencies. If a draft is too short or generic, it requests one rewrite; if the configured model still cannot provide adequate detail, the workflow reports an actionable error instead of committing another one-line report. A larger model may be needed for repositories whose details are difficult for the default `llama3.2:3b` model to infer.
+
 ## GitHub settings
 
 1. Open **Settings → Actions → General** and make sure Actions are enabled and permitted.
