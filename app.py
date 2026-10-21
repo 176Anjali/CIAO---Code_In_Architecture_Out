@@ -4,8 +4,11 @@ import asyncio
 import io
 import json
 import os
+import shutil
 import subprocess
 import tempfile
+import threading
+import time
 import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -21,6 +24,8 @@ APP_DIR = Path(__file__).resolve().parent
 WEB_PAGE = APP_DIR / "web" / "index.html"
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+OLLAMA_START_LOCK = threading.Lock()
+OLLAMA_START_ATTEMPTED = False
 MAX_ARCHIVE_BYTES = 20 * 1024 * 1024
 MAX_FILE_BYTES = 128 * 1024
 MAX_SOURCE_FILES = 100
@@ -55,16 +60,69 @@ def _ollama_tags() -> list[dict[str, Any]]:
     return data.get("models", [])
 
 
+def _start_local_ollama() -> bool:
+    """Start Ollama on demand when the local CLI is installed but its server is down."""
+    global OLLAMA_START_ATTEMPTED
+    host = urlsplit(OLLAMA_HOST).hostname
+    if host not in {"localhost", "127.0.0.1", "::1"}:
+        return False
+
+    with OLLAMA_START_LOCK:
+        if OLLAMA_START_ATTEMPTED:
+            return False
+        OLLAMA_START_ATTEMPTED = True
+        executable = shutil.which("ollama")
+        if not executable:
+            return False
+        try:
+            options: dict[str, Any] = {
+                "stdin": subprocess.DEVNULL,
+                "stdout": subprocess.DEVNULL,
+                "stderr": subprocess.DEVNULL,
+            }
+            if os.name == "nt":
+                options["creationflags"] = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS
+            else:
+                options["start_new_session"] = True
+            subprocess.Popen([executable, "serve"], **options)
+        except OSError:
+            return False
+
+    # The local server needs a moment to bind its port after it starts.
+    for _ in range(10):
+        time.sleep(0.5)
+        try:
+            _ollama_tags()
+            return True
+        except (OSError, URLError, HTTPError, ValueError):
+            continue
+    return False
+
+
 @app.get("/api/ollama/status")
 def ollama_status() -> dict[str, str]:
     try:
         names = {item.get("name") for item in _ollama_tags()}
     except (OSError, URLError, HTTPError, ValueError):
-        return {
-            "status": "offline",
-            "model": OLLAMA_MODEL,
-            "message": "Ollama is not responding. Start the Ollama app and refresh this page.",
-        }
+        if _start_local_ollama():
+            try:
+                names = {item.get("name") for item in _ollama_tags()}
+            except (OSError, URLError, HTTPError, ValueError):
+                names = None
+        else:
+            names = None
+        if names is None:
+            installed = shutil.which("ollama") is not None
+            next_step = (
+                "Install and start Ollama, then run: ollama pull " + OLLAMA_MODEL
+                if not installed
+                else "Ollama could not be started. Run 'ollama serve' and check OLLAMA_HOST."
+            )
+            return {
+                "status": "offline",
+                "model": OLLAMA_MODEL,
+                "message": f"Could not reach Ollama. {next_step}",
+            }
     if OLLAMA_MODEL not in names:
         return {
             "status": "model_missing",

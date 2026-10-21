@@ -20,7 +20,7 @@ ollama pull llama3.2:3b
 python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-Open <http://127.0.0.1:8000>. The Ollama desktop app normally starts its local server automatically. If the website says Ollama is offline, run `ollama serve` in another terminal and refresh the page.
+Open <http://127.0.0.1:8000>. CIAO will start `ollama serve` automatically when the local Ollama CLI is installed and its server is not already running. If Ollama is not installed, install the Ollama desktop app, then run `ollama pull llama3.2:3b` in a terminal and refresh the page. For a remote Ollama server, set `OLLAMA_HOST`; CIAO does not try to start a remote server.
 
 To select a different installed model, set `OLLAMA_MODEL` before starting CIAO. To use a non-default Ollama server, set `OLLAMA_HOST` (default `http://127.0.0.1:11434`).
 
