@@ -320,20 +320,20 @@ async def _clone_repository(url: str) -> tuple[str, int]:
     with tempfile.TemporaryDirectory(prefix="ciao-source-") as temporary:
         target = Path(temporary) / "repository"
         try:
-            process = await asyncio.create_subprocess_exec(
-                "git", "clone", "--depth", "1", "--quiet", "--", clone_url, str(target),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+            process = await asyncio.to_thread(
+                subprocess.run,
+                ["git", "clone", "--depth", "1", "--quiet", "--", clone_url, str(target)],
+                capture_output=True,
+                text=True,
+                timeout=180,
+                check=False,
             )
-            _, stderr = await asyncio.wait_for(process.communicate(), timeout=180)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=500, detail="Git is required to analyze a GitHub repository.") from exc
-        except asyncio.TimeoutError as exc:
-            process.kill()
-            await process.communicate()
+        except subprocess.TimeoutExpired as exc:
             raise HTTPException(status_code=504, detail="Cloning the repository timed out.") from exc
         if process.returncode != 0:
-            message = stderr.decode("utf-8", errors="replace").strip()
+            message = (process.stderr or "").strip()
             raise HTTPException(status_code=400, detail=f"Could not clone repository: {message[:500]}")
         return _read_directory(target)
 

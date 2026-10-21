@@ -146,8 +146,11 @@
         else if(mode==='zip') body.append('archive',archiveInput.files[0]);
         else body.append('source_file',sourceFileInput.files[0]);
         const response=await fetch('/api/analyze',{method:'POST',body});
-        const data=await response.json();
-        if(!response.ok) throw new Error(data.detail||`Request failed (${response.status})`);
+        const responseText=await response.text();
+        let data;
+        try{data=JSON.parse(responseText)}catch{data=null}
+        if(!response.ok) throw new Error(data?.detail||`Server returned ${response.status}: ${responseText.slice(0,240)}`);
+        if(!data) throw new Error('The server returned an unexpected response. Check the window where CIAO is running for details.');
         document.getElementById('report').textContent=data.report;
         document.getElementById('report-meta').textContent=`${data.source} · ${data.files_analyzed} ${data.files_analyzed===1?'file':'files'} · ${data.model}`;
         if(diagramUrl) URL.revokeObjectURL(diagramUrl);
