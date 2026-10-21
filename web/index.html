@@ -149,7 +149,7 @@
         const data=await response.json();
         if(!response.ok) throw new Error(data.detail||`Request failed (${response.status})`);
         document.getElementById('report').textContent=data.report;
-        document.getElementById('report-meta').textContent=`${data.source} · ${data.files_analyzed} files · ${data.model}`;
+        document.getElementById('report-meta').textContent=`${data.source} · ${data.files_analyzed} ${data.files_analyzed===1?'file':'files'} · ${data.model}`;
         if(diagramUrl) URL.revokeObjectURL(diagramUrl);
         if(pdfUrl) URL.revokeObjectURL(pdfUrl);
         diagramUrl=URL.createObjectURL(new Blob([data.diagram_svg],{type:'image/svg+xml'}));

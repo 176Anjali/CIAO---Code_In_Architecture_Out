@@ -400,6 +400,20 @@ def _format_report(report: Any) -> str:
 
 
 def _normalized_graph(analysis: dict[str, Any], label: str) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    report = analysis.get("report", {})
+    report_components = report.get("architecture_components", "") if isinstance(report, dict) else ""
+    # Small local models sometimes return a complete prose inventory but only
+    # one structured diagram node. Recover numbered component lists from that
+    # same report so the PDF and diagram describe the same architecture.
+    listed_names: list[str] = []
+    if isinstance(report_components, str):
+        normalized_inventory = re.sub(r",\s+and\s+(?=\d+[.)])", ", ", report_components, flags=re.I)
+        for match in re.finditer(r"(?:^|[,;\n])\s*\d+[.)]\s*([^,;\n]+)", normalized_inventory):
+            name = re.sub(r"\s+", " ", match.group(1)).strip(" .")
+            name = re.sub(r"\s+and\s*$", "", name, flags=re.I)
+            if name and name.lower() not in {item.lower() for item in listed_names}:
+                listed_names.append(name[:70])
+
     components: list[dict[str, str]] = []
     seen: set[str] = set()
     raw_components = analysis.get("components", [])
@@ -420,20 +434,62 @@ def _normalized_graph(analysis: dict[str, Any], label: str) -> tuple[list[dict[s
                 "name": name,
                 "description": str(item.get("description", ""))[:110],
             })
+    if len(listed_names) > len(components):
+        known = {item["name"].casefold() for item in components}
+        for name in listed_names:
+            if name.casefold() not in known and len(components) < 8:
+                component_id = re.sub(r"[^a-z0-9_-]+", "-", name.lower()).strip("-")[:40]
+                if not component_id or component_id in seen:
+                    component_id = f"component-{len(components) + 1}"
+                seen.add(component_id)
+                components.append({"id": component_id, "name": name, "description": "Identified in the architecture summary"})
+                known.add(name.casefold())
     if not components:
         components = [{"id": "repository", "name": label[:70], "description": "Analyzed source repository"}]
 
     ids = {item["id"] for item in components}
+    aliases = {item["id"].casefold(): item["id"] for item in components}
+    for item in components:
+        aliases[item["name"].casefold()] = item["id"]
+        aliases[re.sub(r"[^a-z0-9]+", "-", item["name"].lower()).strip("-")] = item["id"]
     connections: list[dict[str, str]] = []
     raw_connections = analysis.get("connections", [])
     if isinstance(raw_connections, list):
         for item in raw_connections[:12]:
             if not isinstance(item, dict):
                 continue
-            source = str(item.get("from", ""))
-            target = str(item.get("to", ""))
+            source_ref = str(item.get("from", "")).strip().casefold()
+            target_ref = str(item.get("to", "")).strip().casefold()
+            source = aliases.get(source_ref, aliases.get(re.sub(r"[^a-z0-9]+", "-", source_ref).strip("-"), ""))
+            target = aliases.get(target_ref, aliases.get(re.sub(r"[^a-z0-9]+", "-", target_ref).strip("-"), ""))
             if source in ids and target in ids and source != target:
                 connections.append({"from": source, "to": target, "label": str(item.get("label", ""))[:36]})
+
+    # Recover explicit relationships described in the prose when the model
+    # omits structured edges. Require both component names in a sentence to
+    # avoid inventing links based only on general topic similarity.
+    if not connections and isinstance(report, dict):
+        flows = report.get("important_data_flows", "")
+        if isinstance(flows, str):
+            sentences = re.split(r"(?<=[.!?])\s+|\n+", flows)
+            for sentence in sentences:
+                mentioned = [item for item in components if item["name"].casefold() in sentence.casefold()]
+                for left, right in zip(mentioned, mentioned[1:]):
+                    if left["id"] != right["id"] and not any(edge["from"] == left["id"] and edge["to"] == right["id"] for edge in connections):
+                        connections.append({"from": left["id"], "to": right["id"], "label": "data flow"})
+                        if len(connections) >= 12:
+                            break
+                if len(connections) >= 12:
+                    break
+        # For a clearly enumerated component inventory and prose describing
+        # subsystem interactions, preserve the reported architecture as a
+        # simple ordered flow when the prose omits component names in each
+        # individual sentence (a common compact-model response).
+        if not connections and len(components) > 1 and isinstance(flows, str) and re.search(r"\b(data flow|uses|displays|records|navigate|progress)\b", flows, re.I):
+            connections = [
+                {"from": left["id"], "to": right["id"], "label": "data flow"}
+                for left, right in zip(components, components[1:])
+            ][:12]
     return components, connections
 
 
