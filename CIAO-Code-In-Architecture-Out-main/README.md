@@ -1,48 +1,45 @@
-# CIAO-Code-In-Architecture-Out
+# CIAO — Code In, Architecture Out
 
-CIAO is a command‑line tool that flattens a code repository with Repomix and then uses the OpenAI API to generate Markdown documentation asynchronously.
+CIAO analyzes a software repository and produces a Markdown architecture report with a Mermaid flowchart. This fresh implementation uses a small model served by Ollama on your own computer. It does not use an OpenAI API key or send source code to a hosted language model.
 
-## Prerequisites
+The web app accepts a public GitHub repository URL or a ZIP archive. It collects a bounded set of source files, asks Ollama for an evidence-based report, and provides the report as a Markdown download. CIAO reads repository files as text; it does not execute project code.
 
-- Python 3.11 or later installed and available.
-- An OpenAI API key set in the environment variable `OPENAI_API_KEY`.
-- The `repomix` CLI installed and available on your PATH.
+## Requirements
 
-## Installation
+- Python 3.11 or newer
+- Ollama for Windows
+- Git on `PATH` when analyzing a GitHub URL
 
-1. Clone the repository
-2. Open terminal inside the repository folder
-3. Install Python dependencies: `pip install argparse asyncio aiofiles tiktoken openai repomix`
+## Windows setup
 
+From the repository root in PowerShell or Command Prompt:
 
+```powershell
+python -m pip install -r requirements.txt
+ollama pull llama3.2:3b
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
+```
 
-## Usage
+Open <http://127.0.0.1:8000>. The Ollama desktop app normally starts its local server automatically. If the website says Ollama is offline, run `ollama serve` in another terminal and refresh the page.
 
-1. Set your OpenAI API key, in the terminal: `export OPENAI_API_KEY="Your API Key"`
-2. Set repomix.config.json file to include exclude programming languages
-3. Run CIAO on a repository, in the terminal: `python main.py <github repo link or local repo>`
+To select a different installed model, set `OLLAMA_MODEL` before starting CIAO. To use a non-default Ollama server, set `OLLAMA_HOST` (default `http://127.0.0.1:11434`).
 
+## What the report contains
 
-When the run completes successfully, CIAO will:
+- Executive summary and system purpose
+- Architecture components and important data flows
+- Technologies and entry points found in the source
+- Risks and open questions, with unknowns marked clearly
+- A Mermaid flowchart derived from the analyzed code
 
-- Use Repomix (and `repomix.config.json`) to flatten the repository into `full_code.txt`.
-- Load documentation templates and guidelines from `prompt.json`.
-- Generate documentation sections in parallel and write the final Markdown document to `documentation.txt` in the CIAO project directory.
+The analyzer limits file count, individual file size, and total source context. It skips common dependency, build, and version-control directories. Large repositories may be represented by a source sample rather than every file.
 
+## Command-line launch
 
-## Data Folder 
-As supplemental material the data folder contains:
+The original nested `CIAO-system/main.py` path remains as a small launcher for the new web app:
 
-- Repo folder, containing all the generated markdown documentations with the images.
-- A copy of the survey.
-- Results of the survey.
+```powershell
+python CIAO-system/main.py
+```
 
-
-
-
-
-
-
-
-
-
+This starts the same local site at <http://127.0.0.1:8000>.

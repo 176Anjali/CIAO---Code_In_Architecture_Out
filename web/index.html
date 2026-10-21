@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101923">
+  <title>CIAO — Code In, Architecture Out</title>
+  <style>
+    :root{color-scheme:dark;--bg:#101923;--panel:#17232e;--panel2:#1d2b37;--line:#314554;--ink:#f3f1e9;--muted:#a6b5ba;--lime:#c6f36b;--mint:#79d7bd;--red:#ff9388}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 75% -25%,#385443 0,transparent 42%),var(--bg);color:var(--ink);font:16px/1.55 Inter,ui-sans-serif,system-ui,"Segoe UI",sans-serif}
+    main{width:min(1000px,calc(100% - 36px));margin:auto;padding:42px 0 80px}.top{display:flex;justify-content:space-between;align-items:center;gap:18px}.brand{font-size:.8rem;font-weight:850;letter-spacing:.16em;color:var(--lime)}.status{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:.84rem;border:1px solid var(--line);border-radius:99px;padding:7px 12px}.dot{width:9px;height:9px;background:#e2bd68;border-radius:50%}.status.ready{color:var(--mint)}.status.ready .dot{background:var(--mint)}.status.bad{color:var(--red)}.status.bad .dot{background:var(--red)}
+    .hero{padding:74px 0 34px;max-width:760px}.eyebrow{color:var(--mint);font-size:.78rem;font-weight:750;letter-spacing:.13em;text-transform:uppercase}h1{font-size:clamp(2.8rem,8vw,5.8rem);line-height:.98;letter-spacing:-.065em;margin:15px 0 20px}.hero p{font-size:1.13rem;max-width:670px;color:var(--muted);margin:0}.hero strong{color:var(--ink);font-weight:650}
+    .layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(270px,.9fr);gap:18px}.card{background:linear-gradient(145deg,#1b2935,#14212b);border:1px solid var(--line);border-radius:18px;padding:25px;box-shadow:0 24px 70px #0002}.card h2{font-size:1.18rem;margin:0 0 5px}.sub{margin:0;color:var(--muted);font-size:.9rem}.switch{display:flex;gap:8px;margin:22px 0 16px}.switch button{flex:1;border:1px solid var(--line);background:#111c26;color:var(--muted);padding:10px;border-radius:9px;font:inherit;font-size:.9rem;cursor:pointer}.switch button[aria-pressed=true]{border-color:var(--lime);color:var(--lime);background:#263526}.field-label{display:block;margin:15px 0 7px;font-size:.9rem;font-weight:680}.field{width:100%;border:1px solid #405564;border-radius:10px;background:#101b24;color:var(--ink);font:inherit;padding:13px}.field:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--lime);outline-offset:2px}.help{color:var(--muted);font-size:.82rem;margin:7px 0}.primary{width:100%;border:0;border-radius:10px;background:var(--lime);color:#1c2915;font:inherit;font-weight:820;padding:14px;margin-top:18px;cursor:pointer}.primary:disabled{opacity:.65;cursor:wait}.notice{min-height:24px;color:var(--muted);font-size:.88rem;margin:13px 0 0}.notice.error{color:var(--red)}
+    .how{display:grid;gap:17px;margin-top:20px}.step{display:grid;grid-template-columns:30px 1fr;gap:10px}.num{display:grid;place-items:center;width:28px;height:28px;border:1px solid #526b53;border-radius:50%;color:var(--lime);font-size:.78rem;font-weight:800}.step b{display:block;font-size:.92rem}.step span{color:var(--muted);font-size:.84rem}.privacy{border-top:1px solid var(--line);margin-top:20px;padding-top:17px;color:var(--muted);font-size:.82rem}.privacy strong{color:var(--mint)}
+    .result{margin-top:18px}.result[hidden]{display:none}.result-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.meta{color:var(--muted);font-size:.84rem;margin:5px 0 13px}.download{color:var(--lime);border:1px solid #536a48;border-radius:9px;text-decoration:none;padding:8px 12px;font-weight:700;font-size:.86rem}.report{white-space:pre-wrap;overflow-wrap:anywhere;max-height:70vh;overflow:auto;background:#101a23;border:1px solid var(--line);border-radius:12px;padding:20px;font:14px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;color:#e7eee6}.foot{color:var(--muted);font-size:.78rem;margin-top:23px}@media(max-width:720px){main{padding-top:24px}.hero{padding:55px 0 25px}.layout{grid-template-columns:1fr}.card{padding:20px}.top{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <main>
+    <header class="top">
+      <div class="brand">CIAO / CODE IN, ARCHITECTURE OUT</div>
+      <div class="status" id="ollama-status" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="status-label">Checking local Ollama</span></div>
+    </header>
+    <section class="hero">
+      <div class="eyebrow">Architecture, from the code itself</div>
+      <h1>See how your<br>software fits together.</h1>
+      <p>CIAO reads a repository and turns its source into a clear architecture report. It runs <strong>locally with Ollama</strong>, using your installed model.</p>
+    </section>
+    <section class="layout" aria-label="Analyze a code repository">
+      <div class="card">
+        <h2>Start an analysis</h2>
+        <p class="sub">Use a public GitHub repository or upload a ZIP.</p>
+        <div class="switch" role="group" aria-label="Input type">
+          <button type="button" id="mode-github" aria-pressed="true">GitHub URL</button>
+          <button type="button" id="mode-zip" aria-pressed="false">ZIP archive</button>
+        </div>
+        <form id="analysis-form">
+          <div id="github-field">
+            <label class="field-label" for="repo-url">Repository URL</label>
+            <input class="field" id="repo-url" type="url" placeholder="https://github.com/owner/repository" autocomplete="url" required>
+            <p class="help">Only public GitHub repositories are supported.</p>
+          </div>
+          <div id="zip-field" hidden>
+            <label class="field-label" for="archive">Project ZIP</label>
+            <input class="field" id="archive" type="file" accept=".zip,application/zip">
+            <p class="help">ZIP uploads are limited to 20 MB. CIAO reads supported source files and ignores build folders.</p>
+          </div>
+          <button class="primary" id="submit" type="submit">Generate architecture report</button>
+          <p class="notice" id="notice" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+      <aside class="card">
+        <h2>From source to structure</h2>
+        <div class="how">
+          <div class="step"><span class="num">01</span><div><b>Choose a codebase</b><span>Paste a GitHub URL or select a ZIP.</span></div></div>
+          <div class="step"><span class="num">02</span><div><b>Local model reads the files</b><span>Ollama analyzes source excerpts without sending them to a hosted AI API.</span></div></div>
+          <div class="step"><span class="num">03</span><div><b>Get an architecture report</b><span>Purpose, components, data flow, entry points, risks, and a Mermaid diagram.</span></div></div>
+        </div>
+        <div class="privacy"><strong>Local inference.</strong> The report is generated by the Ollama server configured on this machine. CIAO does not execute repository code.</div>
+      </aside>
+    </section>
+    <section class="card result" id="result" hidden>
+      <div class="result-head"><div><h2>Architecture report</h2><p class="meta" id="report-meta"></p></div><a class="download" id="download" download="ciao-architecture-report.md" href="#">Download Markdown</a></div>
+      <div class="report" id="report" aria-label="Generated architecture report"></div>
+    </section>
+    <p class="foot">CIAO runs on your computer. Keep Ollama open while generating a report.</p>
+  </main>
+  <script>
+    const githubButton=document.getElementById('mode-github');
+    const zipButton=document.getElementById('mode-zip');
+    const githubField=document.getElementById('github-field');
+    const zipField=document.getElementById('zip-field');
+    const repoInput=document.getElementById('repo-url');
+    const archiveInput=document.getElementById('archive');
+    const form=document.getElementById('analysis-form');
+    const submit=document.getElementById('submit');
+    const notice=document.getElementById('notice');
+    let mode='github';
+    let reportUrl=null;
+
+    function setMode(next){
+      mode=next;
+      const github=next==='github';
+      githubButton.setAttribute('aria-pressed',String(github));
+      zipButton.setAttribute('aria-pressed',String(!github));
+      githubField.hidden=!github;
+      zipField.hidden=github;
+      repoInput.required=github;
+      archiveInput.required=!github;
+    }
+    githubButton.addEventListener('click',()=>setMode('github'));
+    zipButton.addEventListener('click',()=>setMode('zip'));
+
+    async function checkOllama(){
+      const badge=document.getElementById('ollama-status');
+      const label=document.getElementById('status-label');
+      try{
+        const response=await fetch('/api/ollama/status');
+        const data=await response.json();
+        label.textContent=data.status==='ready'?`Ollama ready · ${data.model}`:data.message;
+        badge.classList.toggle('ready',data.status==='ready');
+        badge.classList.toggle('bad',data.status!=='ready');
+      }catch{
+        label.textContent='Could not check Ollama';
+        badge.classList.add('bad');
+      }
+    }
+    checkOllama();
+
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();
+      notice.className='notice';
+      notice.textContent='Reading the repository and asking your local model. This may take a few minutes.';
+      submit.disabled=true;
+      submit.textContent='Analyzing…';
+      document.getElementById('result').hidden=true;
+      try{
+        const body=new FormData();
+        if(mode==='github') body.append('repo_url',repoInput.value.trim());
+        else body.append('archive',archiveInput.files[0]);
+        const response=await fetch('/api/analyze',{method:'POST',body});
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.detail||`Request failed (${response.status})`);
+        document.getElementById('report').textContent=data.report;
+        document.getElementById('report-meta').textContent=`${data.source} · ${data.files_analyzed} files · ${data.model}`;
+        if(reportUrl) URL.revokeObjectURL(reportUrl);
+        reportUrl=URL.createObjectURL(new Blob([data.report],{type:'text/markdown;charset=utf-8'}));
+        document.getElementById('download').href=reportUrl;
+        const result=document.getElementById('result');
+        result.hidden=false;
+        result.scrollIntoView({behavior:'smooth',block:'start'});
+        notice.textContent='Report generated.';
+      }catch(error){
+        notice.className='notice error';
+        notice.textContent=error.message||'Analysis failed.';
+      }finally{
+        submit.disabled=false;
+        submit.textContent='Generate architecture report';
+      }
+    });
+  </script>
+</body>
+</html>
